@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-STEAM IC — Raspberry Pi showcase demo.
+Raspberry Pi playback demo.
 
 Replays the saliency-aware compression pipeline log output using the
 measured numbers from the M3 Pro reference run, then opens the
@@ -13,7 +13,7 @@ Layout of the comparison video:
 
 This script does NOT re-encode anything — the bg/fg codec is heavy and
 takes minutes on a Mac; the Pi prototype just plays back the cached
-result so judges can see the headline outcome inside a 30-second slot.
+result so viewers can see the headline outcome in about 30 seconds.
 
 Usage:
     python3 demo_pi.py
@@ -139,7 +139,7 @@ def main() -> int:
     t0 = time.time()
 
     # ----- Banner -----
-    header("STEAM IC — saliency-aware compression pipeline")
+    header("Saliency-aware compression pipeline")
     line(f"    clip             = {CLIP_ID}")
     line(f"    crf              = {CRF}")
     line(f"    saliency backend = {SALIENCY_BACKEND}", pause=0.4)

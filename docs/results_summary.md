@@ -1,6 +1,6 @@
-# Measured results — single source of truth for the analysis & showcase
+# Measured results — single source of truth for the analysis & demos
 
-This document consolidates every number that goes into the analysis, deck, and poster. All figures and prose downstream cite numbers from here.
+This document consolidates every number that goes into the analysis and demo materials. All figures and prose downstream cite numbers from here.
 
 **Last updated:** 2026-04-30, end of Wave-3 sigmoid-mask validation pass.
 
@@ -109,7 +109,7 @@ Take-away for the analysis: a real, hands-on confirmation that the "AI compressi
 
 On the 20 real CCTV clips, the gate (motion + flow only, no person detector or audio) triggers on **65.2 %** of frames — consistent with the dense activity levels in action-recognition footage. Validates that motion + flow alone is sufficient signal in this domain.
 
-(Synthetic-scene gate trace is preserved in `results/figures/gate_trace.png` for visual clarity in the deck — the synthetic ground-truth windows make the trigger correlation easy to see.)
+(Synthetic-scene gate trace is preserved in `results/figures/gate_trace.png` for visual clarity — the synthetic ground-truth windows make the trigger correlation easy to see.)
 
 ---
 
@@ -146,4 +146,4 @@ These are explicitly disclosed as iso-CRF, not iso-quality. The honest framing i
 - `ablation_mask/` — mask-mode ablation (alpha vs sigmoid vs binary)
 - `ablation_sigmoid/` — sigmoid RD-curve sweep (CRFs 22, 34, 40)
 - `neural_codec/{weights.pt, training.json, benchmark.json}` — trained autoencoder + measurements
-- `figures/` — all PNGs used in the analysis, deck, and poster
+- `figures/` — all PNGs used in the analysis and demo materials

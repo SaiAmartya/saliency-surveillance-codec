@@ -8,7 +8,7 @@ venv_python := if os() == "windows" { ".venv\\Scripts\\python.exe" } else { ".ve
 default:
     @just --list
 
-# One-shot setup for the STEAM ICAC 2026 CS project
+# One-shot setup for the project
 setup: check-ffmpeg create-venv install-deps test
     @echo ""
     @echo "==> Setup complete. Activate with:"

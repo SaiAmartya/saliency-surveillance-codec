@@ -1,5 +1,5 @@
 """
-STEAM ICAC 2026 CS showcase — perceptually-guided, sensor-gated compression
+Saliency-aware surveillance codec — perceptually-guided, sensor-gated compression
 pipeline for home-surveillance video.
 
 Submodules:

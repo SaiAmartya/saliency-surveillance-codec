@@ -149,7 +149,7 @@ def main() -> int:
     # Loud device banner BEFORE the camera even opens — if YOLO is going to
     # crawl on CPU the user should know up front, not 30 frames in.
     dev = describe_device(saliency_backend=args.saliency)
-    print(f"\n=== STEAM IC live demo ===")
+    print(f"\n=== Saliency live demo ===")
     print(f"  {dev['banner']}")
 
     cap = cv2.VideoCapture(args.camera)
@@ -160,7 +160,7 @@ def main() -> int:
     for _ in range(15):
         cap.read()
 
-    window_name = f"STEAM IC live demo — saliency = {args.saliency}"
+    window_name = f"Saliency live demo — saliency = {args.saliency}"
     cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
 
     background = calibrate_background(cap, args.bg_samples, window_name)

@@ -1,6 +1,6 @@
-# Raspberry Pi showcase demo
+# Raspberry Pi demo
 
-Standalone bundle for the STEAM IC saliency-aware compression pipeline.
+Standalone bundle for the saliency-aware compression pipeline.
 It ships two demos:
 
 1. **Compression Pipeline Demo** — a pre-computed playback that runs
@@ -13,7 +13,7 @@ It ships two demos:
 ## What's in here
 
 - `gui.py` — graphical front end with both demos in tabs (recommended for
-  the booth). Requires `python3-tk`.
+  live demos). Requires `python3-tk`.
 - `demo_pi.py` — pure-stdlib console replay of the compression pipeline.
   Launch this if you want to run from the terminal, or if tkinter isn't
   installed.

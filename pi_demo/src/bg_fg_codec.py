@@ -40,7 +40,7 @@ import cv2
 import numpy as np
 
 from .saliency import SaliencyEstimator, TemporalSmoother
-from .compress import FramePipeEncoder, H265EncoderConfig, _build_alpha
+from .compress import DEFAULT_KEYINT_S, FramePipeEncoder, H265EncoderConfig, _build_alpha
 
 logger = logging.getLogger(__name__)
 
@@ -96,6 +96,7 @@ class BgFgConfig:
     codec: str = "libx265"
     crf: int = 28
     preset: str = "fast"
+    keyint_s: Optional[float] = DEFAULT_KEYINT_S     # max GOP; see compress.DEFAULT_KEYINT_S
 
 
 def _sample_frame_indices(n_total: int, k: int) -> list[int]:
@@ -277,6 +278,7 @@ class BgFgCodec:
             codec=self.cfg.codec,
             crf=self.cfg.crf,
             preset=self.cfg.preset,
+            keyint_s=self.cfg.keyint_s,
         )
         self._encoder = FramePipeEncoder(encoder_cfg)
 
@@ -434,6 +436,7 @@ class BgFgCodec:
             bg_path = str(Path(output_path).with_suffix("")) + "_bgseq.mp4"
             sidecar_enc = FramePipeEncoder(H265EncoderConfig(
                 codec=self.cfg.codec, crf=self.cfg.bg_sidecar_crf, preset="medium",
+                keyint_s=self.cfg.keyint_s,
             ))
             sidecar_enc.encode(
                 (bg for _, _, bg in bg_source),
@@ -494,6 +497,9 @@ if __name__ == "__main__":
                         help="Rolling mode: recalibration interval in seconds (default 4.0).")
     parser.add_argument("--bg-window", type=float, default=6.0,
                         help="Rolling mode: ± median window in seconds (default 6.0).")
+    parser.add_argument("--keyint", type=float, default=DEFAULT_KEYINT_S,
+                        help=f"Max seconds between I-frames (default {DEFAULT_KEYINT_S:g}; "
+                             "0 = encoder default of 250 frames).")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -507,6 +513,7 @@ if __name__ == "__main__":
         bg_mode=args.bg_mode,
         bg_recalibration_interval_s=args.bg_recal_interval,
         bg_rolling_window_s=args.bg_window,
+        keyint_s=args.keyint or None,
     )
     codec = BgFgCodec(cfg)
     stats = codec.encode(args.input, args.out)

@@ -1,8 +1,6 @@
-# STEAM ICAC 2026 — CS Showcase
+# Saliency-Aware Surveillance Codec
 
-A saliency-aware background/foreground codec for stationary surveillance cameras. Our entry to the [STEAM Innovation Challenge Annual Conference 2026](https://steaminnovationchallenge.org/steam-icac-2026/), Computer Science prompt, Showcase format.
-
-**Event:** May 28–29, 2026 · Hart House, University of Toronto.
+A saliency-aware background/foreground codec for stationary surveillance cameras. It pins everything a viewer wouldn't look at to a learned background image, so a standard H.265 encoder spends its bits on people, vehicles, and anything that moves.
 
 ---
 
@@ -14,13 +12,12 @@ The output is a standards-compliant H.265 mp4. Any decoder plays it back without
 
 ---
 
-## What's in the deliverables
+## What's in the repo
 
 | File | What it is |
 |---|---|
-| [`analysis.docx`](analysis.docx) | The 5-page showcase analysis. Times New Roman 12, 1.15 spacing, 1" margins — STEAM IC spec exactly. |
-| [`STEAM_Project.pptx`](STEAM_Project.pptx) | 29-slide deck for the 10-minute booth slot. |
-| [`docs/architecture.md`](docs/architecture.md) | System overview with mermaid diagrams — share with judges/teammates. |
+| [`analysis.docx`](analysis.docx) | The 5-page technical analysis: method, perceptual grounding, results, limitations. |
+| [`docs/architecture.md`](docs/architecture.md) | System overview with mermaid diagrams. |
 | [`docs/demo_scripts.md`](docs/demo_scripts.md) | Every copy-pasteable demo command, grouped by purpose. |
 | [`docs/raspberry_pi_setup.md`](docs/raspberry_pi_setup.md) | Fresh-Pi-5 install and demo-day checklist. |
 | [`docs/external_data.md`](docs/external_data.md) | How to source higher-resolution surveillance footage (VIRAT, Mixkit, Pexels). |
@@ -48,13 +45,15 @@ For broader context, the 20-clip aggregate over the Kaggle CCTV Action-Recogniti
 
 The per-clip win scales with how much of the frame is static background, so the codec gets *better* as cameras move to higher resolution and wider angles — the direction surveillance is already going. The VIRAT 1080p clip is the clearest demonstration of that scaling. See [`docs/architecture.md`](docs/architecture.md) for the why and [`docs/demo_scripts.md`](docs/demo_scripts.md) for how to reproduce.
 
+These numbers were measured with x265's default 250-frame GOP. The 20 s GOP cap (step 5 below) makes long static clips smaller still: on a 960×540 copy of the same 75 s VIRAT clip it shrinks the bg/fg file by a further 24–26% at the same CRF (PSNR within 0.05 dB), taking the saving over baseline H.265 at CRF 22 from 51% to 58% — and from 77% to 81% with simulated sensor noise added. Clips shorter than ~8 s, like the Kaggle set, are unaffected.
+
 ---
 
 ## Quick start
 
 ```bash
-git clone https://github.com/SaiAmartya/steam-icac-2026.git
-cd steam-icac-2026
+git clone https://github.com/SaiAmartya/saliency-surveillance-codec.git
+cd saliency-surveillance-codec
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
@@ -81,11 +80,10 @@ For the full reproducibility flow (encoding all 20 clips, regenerating the catal
 ## Code map
 
 ```
-steam-icac-2026/
-├── analysis.docx                Showcase analysis (TNR 12, 1.15 spacing, 5 pages)
-├── STEAM_Project.pptx           29-slide deck for the booth
+saliency-surveillance-codec/
+├── analysis.docx                   5-page technical analysis
 ├── README.md                       You're here
-├── PLAN.md                         Original full project plan
+├── PLAN.md                         Original design plan
 ├── LICENSE                         MIT
 ├── requirements.txt
 │
@@ -135,6 +133,7 @@ Every module exposes a small public API documented in its docstring. `bg_fg_code
 2. **For each frame**, compute a saliency map from three combined signals: YOLOv8n detections (semantic — people, vehicles, bags, animals), spectral residual (low-level novelty), and motion against the background image. Temporal-smooth across an 11-frame window.
 3. **Blend each frame against the background** using a sigmoid-shaped saliency mask, with a 0.25 floor so the original frame is never *fully* replaced. The blended stream goes to an unmodified `libx265` at the target CRF.
 4. **The output is a normal H.265 mp4.** Non-salient regions are byte-identical across consecutive frames, so the codec's inter-frame prediction emits skip flags rather than residuals. All the bits move to the foreground.
+5. **Long GOP for a static scene.** Once the background is pinned, intra frames dominate the stream — each one re-sends the entire background. The max I-frame interval is raised from x265's default 250 frames (~8 s) to 20 s (`keyint_s` / `--keyint`); x265 still cuts an I-frame on a scene change, so this is the same "dynamic GOP" idea commercial surveillance encoders (Axis Zipstream, Hikvision H.265+) use. The baseline gets the identical setting, so comparisons stay apples-to-apples.
 
 See [`docs/architecture.md`](docs/architecture.md) for the diagrams.
 
@@ -144,7 +143,7 @@ See [`docs/architecture.md`](docs/architecture.md) for the diagrams.
 
 The codec assumes a **stationary camera**. Pan/tilt/zoom footage breaks the temporal-median background model, and handheld VIRAT clips lose roughly half the size advantage. When a subject **fills most of the frame** (close-ups, dense two-person scenes), there's barely any background to replace and savings shrink toward zero. When a subject **stands still for >50% of the clip duration**, the median absorbs them into the background — the codec then "sees" them as part of the scene.
 
-These are scope restrictions, not bugs. Most home surveillance deployments are stationary cameras watching mostly-empty spaces, which is exactly where the codec wins. The deck and the analysis call out all three failure modes explicitly.
+These are scope restrictions, not bugs. Most home surveillance deployments are stationary cameras watching mostly-empty spaces, which is exactly where the codec wins. The analysis calls out all three failure modes explicitly.
 
 We also report **saliency-weighted PSNR** (sal-PSNR), which only counts error inside regions our saliency map said matter. Plain PSNR penalises us for intentionally replacing background pixels — which is the *contract* of the codec, not a bug. See §7 of `analysis.docx` for the metric defense.
 

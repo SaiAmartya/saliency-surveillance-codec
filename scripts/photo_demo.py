@@ -31,7 +31,7 @@ sys.path.insert(0, str(ROOT))
 from src.bg_fg_codec import BgFgCodec, BgFgConfig  # noqa: E402
 from src.compress import encode_uniform  # noqa: E402
 from src.metrics import video_metrics  # noqa: E402
-from src.saliency import describe_device  # noqa: E402
+from src.saliency import describe_device, spectral_residual_saliency  # noqa: E402
 
 OUT_DIR = ROOT / "results" / "photo_demo"
 
@@ -89,7 +89,7 @@ def get_middle_frame(path: Path) -> np.ndarray | None:
 
 def saliency_overlay(rgb: np.ndarray) -> np.ndarray:
     bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-    sal_obj = cv2.saliency.StaticSaliencySpectralResidual_create()
+    sal_obj = spectral_residual_saliency()
     ok, sal = sal_obj.computeSaliency(bgr)
     if not ok:
         return rgb
@@ -179,7 +179,7 @@ def main() -> None:
     src_path = tmp_dir / "capture.mp4"
 
     dev = describe_device(saliency_backend=args.saliency)
-    print("=== STEAM IC webcam → compression demo ===")
+    print("=== Webcam → compression demo ===")
     print(f"  {dev['banner']}")
     capture_burst(args.camera, args.duration, src_path)
 

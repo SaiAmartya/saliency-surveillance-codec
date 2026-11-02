@@ -11,7 +11,7 @@ synthetic clip of length T that interleaves:
     [...optionally repeated...]
 
 …and runs both baseline H.265 and ours_bgfg on it so you can quote a
-realistic surveillance-density compression number for the deck.
+realistic surveillance-density compression number.
 
 The "idle background" is the temporal-median image from the action clip,
 written N seconds long with tiny per-pixel noise so H.265 doesn't completely

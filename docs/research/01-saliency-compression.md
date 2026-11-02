@@ -51,4 +51,4 @@ Useful Python libraries: `ffmpeg-python`, `opencv-python` (incl. `opencv-contrib
 | **VMAF** | `libvmaf` CLI + wrapper | medium | Netflix standard; very accurate; a few clips is enough for the report. |
 | **PSNR-HVS-M** | research code, not pip | medium | Add only if time allows. |
 
-For the showcase: PSNR + MS-SSIM (cheap) + LPIPS (if the laptop has GPU); run VMAF on 2–3 representative clips for the analysis document.
+For the demo: PSNR + MS-SSIM (cheap) + LPIPS (if the laptop has GPU); run VMAF on 2–3 representative clips for the analysis document.

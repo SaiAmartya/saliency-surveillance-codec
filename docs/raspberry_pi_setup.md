@@ -3,7 +3,7 @@
 This is the deployment target for the live demo. Everything in the repo
 that runs on a laptop also runs on a Pi 5 with the same commands — these
 are the steps to get a fresh Pi from "first boot" to "live saliency
-heatmap window on the TV behind the booth."
+heatmap window on an attached display."
 
 > **Tested on:** Raspberry Pi 5 (8 GB), Raspberry Pi OS 64-bit (Bookworm),
 > USB UVC webcam, HDMI display. The exact same pipeline runs on the team
@@ -37,8 +37,8 @@ the webcam in and re-run.
 ## 2. Clone + venv
 
 ```bash
-git clone https://github.com/SaiAmartya/steam-icac-2026.git
-cd steam-icac-2026
+git clone https://github.com/SaiAmartya/saliency-surveillance-codec.git
+cd saliency-surveillance-codec
 
 # venv keeps system Python clean; --system-site-packages is NOT needed
 python3 -m venv .venv
@@ -55,7 +55,10 @@ The full `requirements.txt` works on Pi 5 as-is. Two notes:
   at 640×480 input — enough for our demo where we don't need every frame.
 - **opencv-contrib-python** brings the `cv2.saliency` module we need for
   spectral residual. Pin it; the base `opencv-python` package does not
-  include this module.
+  include this module. `ultralytics` pulls in `opencv-python` anyway, and
+  whichever of the two installs last owns `cv2/`. If contrib loses, the
+  spectral backend falls back to a NumPy port on its own; reinstall
+  `opencv-contrib-python` only if you need the `finegrained` backend.
 
 ```bash
 pip install -r requirements.txt
@@ -82,7 +85,7 @@ print('saliency:', est.predict(fake).shape, 'OK')
 
 If that prints `saliency: (360, 640) OK`, the install is good.
 
-## 5. The three demos you actually run at the booth
+## 5. The three demos worth running
 
 ### A. Live saliency heatmap window (the headline visual)
 
@@ -93,7 +96,7 @@ python scripts/live_demo.py
 Opens a window with the live webcam feed overlaid with the YOLO+spectral
 saliency heatmap and a real-time "usefulness" score from the gate. Press
 `q` to quit. On Pi 5 you'll get ~5–10 fps depending on lighting — fine
-for showing judges what the saliency picks up on.
+for showing what the saliency picks up on.
 
 ### B. Webcam → compressed comparison (the 4-panel PNG)
 
@@ -111,7 +114,7 @@ foreground for the saliency map to find.
 
 ### C. The pre-built VIRAT comparison video
 
-The deck references a 1080p VIRAT clip with all 4 panels playing in
+The headline result is a 1080p VIRAT clip with all 4 panels playing in
 lockstep. That mp4 was rendered ahead of time on a laptop and lives at:
 
 ```
@@ -120,14 +123,14 @@ results/comparisons/headline_*.mp4       # any pre-baked headline videos
 ```
 
 If they aren't on the Pi (they shouldn't be — they're gitignored
-because of size), copy them over from a laptop before the showcase:
+because of size), copy them over from a laptop first:
 
 ```bash
 # from the laptop, push the demo videos to the pi
-scp results/comparisons/*.mp4 pi@<pi-address>:~/steam-icac-2026/results/comparisons/
+scp results/comparisons/*.mp4 pi@<pi-address>:~/saliency-surveillance-codec/results/comparisons/
 ```
 
-To play one on the Pi at the booth, just double-click the file or:
+To play one on the Pi, just double-click the file or:
 
 ```bash
 xdg-open results/comparisons/clip_14_crf22.mp4
@@ -139,8 +142,8 @@ xdg-open results/comparisons/clip_14_crf22.mp4
 
 The Pi can build any demo video locally, it just takes longer than a
 laptop. Encoding a 24-second VIRAT clip at CRF 22 takes ~3 min on Pi 5
-versus ~30 s on an M3 macbook. If you do want to bake fresh demos at the
-booth:
+versus ~30 s on an M3 macbook. If you do want to bake fresh demos on the
+Pi:
 
 ```bash
 # pre-built demo videos (matches §8 of docs/demo_scripts.md)
@@ -153,7 +156,7 @@ The clips themselves (`data/real/clip_*.mp4`) need to be on the Pi too —
 they're gitignored. Copy from a laptop:
 
 ```bash
-scp -r data/ pi@<pi-address>:~/steam-icac-2026/
+scp -r data/ pi@<pi-address>:~/saliency-surveillance-codec/
 ```
 
 ---
@@ -167,7 +170,7 @@ scp -r data/ pi@<pi-address>:~/steam-icac-2026/
   required for `live_demo.py` (it's already optimized).
 - **Avoid the Pi camera module** for this demo — the pipeline expects a
   UVC webcam. The libcamera path works but adds complexity we don't need
-  for a 10-minute booth slot.
+  for a short demo.
 - **No `cv2.imshow` over SSH**: if you SSH to the Pi without X
   forwarding, `live_demo.py` will fail to create the window. Either run
   it from a terminal directly on the Pi (with monitor attached), or
@@ -175,17 +178,16 @@ scp -r data/ pi@<pi-address>:~/steam-icac-2026/
 - **`ultralytics` first run**: the first YOLO call downloads
   `yolov8n.pt` (~6 MB). Make sure the Pi has internet at first launch;
   after that, it's offline-capable.
-- **Performance numbers in the deck (slide 16, "100+ fps") refer to the
+- **The "100+ fps" saliency figure refers to the
   spectral-residual component of saliency**, which is the only piece
   that hits that throughput on a Pi 5. The full YOLO+spectral+motion
-  stack runs at 5–10 fps on the Pi. If a judge probes, that's the
-  honest answer.
+  stack runs at 5–10 fps on the Pi.
 
 ---
 
 ## 8. Demo-day checklist
 
-Bring to the booth:
+Bring to the demo:
 
 - The Pi 5 (in case it has the demo wired up)
 - USB webcam (with a known-good USB cable)

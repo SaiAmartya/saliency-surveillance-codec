@@ -9,7 +9,7 @@ pipeline, this module only provides:
                             and the saliency-overlay panel in `compare_clip.py`
                             so both renders stay visually consistent with the
                             mask the encoder actually sees.
-  - `H265EncoderConfig`   : codec / crf / preset bundle.
+  - `H265EncoderConfig`   : codec / crf / preset / max-GOP bundle.
   - `FramePipeEncoder`    : raw BGR frames in → H.265 mp4 out via an ffmpeg
                             stdin pipe. Used by `BgFgCodec` as its underlying
                             stream encoder.
@@ -58,11 +58,36 @@ def _build_alpha(sal: np.ndarray, mode: str, threshold: float, steepness: float)
 # H.265 encoder used by bg_fg_codec
 # ---------------------------------------------------------------------------
 
+# Max seconds between I-frames. x265's default is 250 frames (~8 s at 30 fps),
+# so a stationary camera re-sends its whole background as an intra frame every
+# few seconds — and once the background is pinned, those I-frames are most of
+# the bg/fg stream's bytes. The encoder still cuts a new I-frame on a scene
+# change (scenecut stays on), so a long cap only stretches the GOP while the
+# scene is static: the "dynamic GOP" that surveillance encoders such as Axis
+# Zipstream and Hikvision H.265+ rely on. The cost is coarser seeking.
+DEFAULT_KEYINT_S = 20.0
+
+
 @dataclass
 class H265EncoderConfig:
     codec: str = "libx265"        # libx265 or libx264
     crf: int = 28                 # baseline quality (higher = smaller)
     preset: str = "fast"
+    keyint_s: Optional[float] = DEFAULT_KEYINT_S   # None = encoder default GOP
+
+
+def _codec_args(codec: str, preset: str, crf: int, keyint_s: Optional[float], fps: float) -> list[str]:
+    """Shared encoder flags, so the baseline and bg/fg encodes stay apples-to-apples."""
+    args = ["-c:v", codec, "-preset", preset, "-crf", f"{crf}", "-pix_fmt", "yuv420p"]
+    if keyint_s:
+        args += ["-g", str(max(1, round(keyint_s * fps)))]
+    # macOS QuickTime requires the hvc1 codec tag for H.265-in-MP4 playback;
+    # ffmpeg defaults to hev1 which QuickTime refuses. Same bitstream either
+    # way — just a metadata flag in the container. Apply only for libx265
+    # (libx264 / other codecs would reject this tag).
+    if codec in ("libx265", "hevc"):
+        args += ["-tag:v", "hvc1"]
+    return args
 
 
 class FramePipeEncoder:
@@ -84,26 +109,17 @@ class FramePipeEncoder:
     ) -> dict:
         w, h = size
         cmd = [
-            "ffmpeg", "-y",
+            "ffmpeg", "-y", "-loglevel", "error",
             "-f", "rawvideo",
             "-pix_fmt", "bgr24",
             "-s", f"{w}x{h}",
             "-r", f"{fps}",
             "-i", "-",
-            "-c:v", self.cfg.codec,
-            "-preset", self.cfg.preset,
-            "-crf", f"{self.cfg.crf}",
-            "-pix_fmt", "yuv420p",
+            *_codec_args(self.cfg.codec, self.cfg.preset, self.cfg.crf, self.cfg.keyint_s, fps),
+            out_path,
         ]
-        # macOS QuickTime requires the hvc1 codec tag for H.265-in-MP4 playback;
-        # ffmpeg defaults to hev1 which QuickTime refuses. Same bitstream either
-        # way — just a metadata flag in the container. Apply only for libx265
-        # (libx264 / other codecs would reject this tag).
-        if self.cfg.codec in ("libx265", "hevc"):
-            cmd += ["-tag:v", "hvc1"]
-        cmd.append(out_path)
-        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        assert proc.stdin is not None
+        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        assert proc.stdin is not None and proc.stderr is not None
 
         n = 0
         try:
@@ -112,12 +128,18 @@ class FramePipeEncoder:
                     f = cv2.resize(f, (w, h))
                 proc.stdin.write(f.tobytes())
                 n += 1
+        except BrokenPipeError:
+            pass  # ffmpeg exited early; its stderr (raised below) says why
         finally:
-            proc.stdin.close()
+            try:
+                proc.stdin.close()
+            except BrokenPipeError:
+                pass
+            err = proc.stderr.read().decode(errors="replace").strip()
             proc.wait()
 
         if proc.returncode != 0:
-            raise RuntimeError(f"ffmpeg failed with code {proc.returncode}")
+            raise RuntimeError(f"ffmpeg failed with code {proc.returncode}: {err[-800:]}")
 
         return {
             "out_path": out_path,
@@ -136,19 +158,26 @@ def encode_uniform(
     crf: int = 28,
     codec: str = "libx265",
     preset: str = "fast",
+    keyint_s: Optional[float] = DEFAULT_KEYINT_S,
 ) -> dict:
-    """Baseline: re-encode an existing video uniformly, no saliency awareness."""
+    """Baseline: re-encode an existing video uniformly, no saliency awareness.
+
+    Uses the same encoder flags (GOP cap included) as `FramePipeEncoder`, and
+    drops audio (`-an`): the bg/fg encode is video-only, so a baseline that
+    kept the source's audio track would inflate the reported savings.
+    """
+    cap = cv2.VideoCapture(input_path)
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    cap.release()
     cmd = [
-        "ffmpeg", "-y", "-i", input_path,
-        "-c:v", codec, "-preset", preset, "-crf", f"{crf}",
-        "-pix_fmt", "yuv420p",
+        "ffmpeg", "-y", "-loglevel", "error", "-i", input_path, "-an",
+        *_codec_args(codec, preset, crf, keyint_s, fps),
+        out_path,
     ]
-    # hvc1 tag for macOS QuickTime compatibility (libx265 only — see
-    # FramePipeEncoder.encode above for the rationale).
-    if codec in ("libx265", "hevc"):
-        cmd += ["-tag:v", "hvc1"]
-    cmd.append(out_path)
-    subprocess.run(cmd, check=True, stderr=subprocess.DEVNULL)
+    proc = subprocess.run(cmd, stderr=subprocess.PIPE)
+    if proc.returncode != 0:
+        err = proc.stderr.decode(errors="replace").strip()
+        raise RuntimeError(f"ffmpeg failed with code {proc.returncode}: {err[-800:]}")
     return {"out_path": out_path, "bytes": os.path.getsize(out_path)}
 
 

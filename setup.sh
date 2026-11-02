@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-shot setup for the STEAM ICAC 2026 CS project on macOS.
+# One-shot setup for the project on macOS.
 # Creates a Python venv, installs deps, and verifies ffmpeg is reachable.
 #
 # Usage:  chmod +x setup.sh && ./setup.sh

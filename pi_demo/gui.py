@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-STEAM IC Demo Console — all-in-one tkinter wrapper for the demo scripts.
+Demo Console — all-in-one tkinter wrapper for the demo scripts.
 
 Two tabs:
   * Live Saliency Demo  — launches scripts/live_demo.py with the saliency
@@ -124,11 +124,11 @@ class DemoConsole:
         self.launcher_mode = launcher_mode
 
         if self.launcher_mode:
-            self.root.title("STEAM IC — Pi Demo Console")
+            self.root.title("Surveillance Codec — Pi Demo Console")
             self.root.geometry("1000x760")
             self.root.minsize(880, 640)
         else:
-            self.root.title("STEAM IC — Demo Console")
+            self.root.title("Surveillance Codec — Demo Console")
             self.root.geometry("1000x760")
             self.root.minsize(880, 640)
 
@@ -163,8 +163,8 @@ class DemoConsole:
         header = ttk.Frame(self.root)
         header.pack(fill="x", padx=14, pady=(12, 6))
         title_text = (
-            "STEAM IC — Pi Demo Console"
-            if self.launcher_mode else "STEAM IC — Demo Console"
+            "Surveillance Codec — Pi Demo Console"
+            if self.launcher_mode else "Surveillance Codec — Demo Console"
         )
         ttk.Label(header, text=title_text, style="Title.TLabel").pack(side="left")
         ttk.Label(

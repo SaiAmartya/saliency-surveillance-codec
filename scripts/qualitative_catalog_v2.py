@@ -5,7 +5,7 @@ Each page:
     original | saliency overlay | baseline H.265 | ours_bgfg
 
 Sweeps every clip × CRF × multiple frames so you can pick the strongest
-showcase example. Assumes you've already run ablation_bgfg.py first so
+demo example. Assumes you've already run ablation_bgfg.py first so
 the encoded mp4s exist in results/ablation_bgfg/encoded/.
 
 Usage:
@@ -144,7 +144,7 @@ def main() -> None:
         ax.axis("off")
         ax.text(0.5, 0.72, "Qualitative comparison catalog v2",
                 ha="center", va="center", fontsize=24, fontweight="bold")
-        ax.text(0.5, 0.58, "STEAM IC — H.265 vs ours_bgfg",
+        ax.text(0.5, 0.58, "H.265 vs ours_bgfg",
                 ha="center", va="center", fontsize=14)
         ax.text(0.5, 0.40,
                 f"{len(manifest)} clips × {len(args.crfs)} CRFs × {len(args.frames)} frames\n"

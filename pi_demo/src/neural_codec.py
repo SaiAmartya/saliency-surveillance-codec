@@ -1,7 +1,7 @@
 """
 neural_codec.py — Tiny convolutional autoencoder for video compression demo.
 
-A prototype neural codec for STEAM IC competition: shows side-by-side comparison
+A prototype neural codec for this project: shows side-by-side comparison
 of classical (H.265 saliency-aware) vs. neural (conv autoencoder) compression.
 The point is to demonstrate trade-offs: aggressive compression vs. slow inference.
 

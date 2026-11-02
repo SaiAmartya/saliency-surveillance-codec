@@ -1,4 +1,4 @@
-# STEAM IC — Architecture & Pipeline Overview
+# Architecture & Pipeline Overview
 
 A guide to how the system works end-to-end, written for team members who need
 to explain it to others. Every section has a diagram + short notes on what
@@ -282,7 +282,7 @@ flowchart TB
 | `src/metrics.py` | PSNR, SSIM, LPIPS, and **saliency-weighted PSNR** (the honest metric for our codec). |
 | `src/neural_codec.py` | Single-frame autoencoder (the *naive learned-codec baseline* — not competitive). |
 | `scripts/ablation_bgfg.py` | Head-to-head comparison: baseline H.265 vs ours_bgfg. |
-| `scripts/qualitative_catalog_v2.py` | 4-panel comparison PDF for showcase example selection. |
+| `scripts/qualitative_catalog_v2.py` | 4-panel comparison PDF for demo example selection. |
 | `scripts/photo_demo.py` | Live webcam demo, baseline vs ours_bgfg side by side. |
 | `docs/writeup_updates.md` | Drop-in sections for analysis.docx. |
 

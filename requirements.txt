@@ -1,7 +1,9 @@
 # Core
 numpy>=1.26
-opencv-python>=4.9
-opencv-contrib-python>=4.9          # for cv2.saliency (spectral residual, fine-grained)
+opencv-contrib-python>=4.9          # cv2 + cv2.saliency. Don't also list opencv-python:
+                                     # both own cv2/, and ultralytics pulls it in anyway. If
+                                     # cv2.saliency goes missing, spectral falls back to a NumPy
+                                     # port; reinstall contrib for the finegrained backend.
 scikit-image>=0.22                   # PSNR / SSIM / MS-SSIM
 scipy>=1.11
 
